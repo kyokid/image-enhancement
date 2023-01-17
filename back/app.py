@@ -12,12 +12,12 @@ from flask import Flask, request, send_file, jsonify
 from flask_cors import CORS
 
 import detect
-
+import detect_dpscan
 
 app = Flask(__name__)
 CORS(app)
 
-net = detect.load_model(model_name="u2net")
+net = detect_dpscan.DPScan() # detect.load_model(model_name="dpscan")
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,14 +45,16 @@ def remove():
 
     img = Image.open(io.BytesIO(data))
 
-    output = detect.predict(net, np.array(img))
-    output = output.resize((img.size), resample=Image.BILINEAR) # remove resample
+    # output = detect.predict(net, np.array(img))
+    # output = output.resize((img.size), resample=Image.BILINEAR) # remove resample
+    output = net(img)
+    output = output.resize((img.size), resample=Image.BICUBIC)
 
-    empty_img = Image.new("RGBA", (img.size), 0)
-    new_img = Image.composite(img, empty_img, output.convert("L"))
+    # empty_img = Image.new("RGBA", (img.size), 0)
+    # new_img = Image.composite(img, empty_img, output.convert("L"))
 
     buffer = io.BytesIO()
-    new_img.save(buffer, "PNG")
+    output.save(buffer, "PNG")
     buffer.seek(0)
 
     logging.info(f" Predicted in {time.time() - start:.2f} sec")
